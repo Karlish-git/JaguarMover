@@ -16,7 +16,7 @@ namespace JaguarMover
 
         private Timer pingTimer;
 
-        private static byte[] recBuffer;
+//        private static byte[] recBuffer;
 
         private Thread receiveThread = null;
 
