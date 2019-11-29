@@ -3,45 +3,29 @@ using System.Text;
 using System.Threading;
 using System.Net;
 using System.Net.Sockets;
-using System.Globalization;
 using System.IO;
 
 namespace JaguarMover
 {
     public class JaguarComm
     {
-        private StreamReader readerReply = null;
-        private StreamWriter writer = null;
-        private NetworkStream replyStream = null;
-
+        private StreamReader readerReply;
+        private NetworkStream replyStream ;
         private Timer pingTimer;
+        private Thread receiveThread;
+        private static Socket _clientSocket;
+        private readonly JagController controller;
 
-//        private static byte[] recBuffer;
-
-        private Thread receiveThread = null;
-
-
-        private static Socket clientSocket;
-        private static int localPort = 0;
-
-        private static string lastRecvErrorMsg = String.Empty;
-        private static int lastRecvError = 0;
-        private static string lastSendErrorMsg = String.Empty;
-        private static int socketErrorCount = 0;
-
-
-        private string processStr = "";
         private string recStr = "";
 
-        //        private string comID = "MOT1";    TODO remove This?
-        private JagController _controller = null;
 
         /// <summary>
+        /// Handles sending and receiving
         /// </summary>
         /// <param name="control"> used to parse received data from Jaguar</param>
         public JaguarComm(JagController control)
         {
-            this._controller= control;
+            this.controller = control;
         }
 
 
@@ -65,17 +49,16 @@ namespace JaguarMover
                 {
                     ipAddress = IPAddress.Parse(addr);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    lastSendErrorMsg = e.Message;
                     return false;
                 }
 
-                IPEndPoint remoteEP = new IPEndPoint(ipAddress, remotePort);
+                IPEndPoint remoteEp = new IPEndPoint(ipAddress, remotePort);
 
                 // Create a TCP socket
 
-                clientSocket = new Socket(AddressFamily.InterNetwork,
+                _clientSocket = new Socket(AddressFamily.InterNetwork,
                     SocketType.Stream, ProtocolType.Tcp);
 
 
@@ -86,22 +69,17 @@ namespace JaguarMover
                 receiveThread = new Thread((DataReceive));
                 //                receiveThread.CurrentCulture = new CultureInfo("en-US"); TODO REMOVE?
 
-                clientSocket.Connect(remoteEP);
-                localPort = ((IPEndPoint)clientSocket.LocalEndPoint).Port;
-
-
-                //Start pinging(so that robot responds to all commands
-                pingTimer = new Timer(Ping, null, TimeSpan.FromSeconds(0.2), TimeSpan.FromSeconds(0.3));
+                _clientSocket.Connect(remoteEp);
 
                 receiveThread.Start();
 
+                //Start pinging(so that robot responds to all commands
+                pingTimer = new Timer(Ping, "Some state", TimeSpan.FromSeconds(0.2), TimeSpan.FromSeconds(0.2));
+
                 return true;
             }
-            catch (SocketException e)
+            catch (SocketException)
             {
-                socketErrorCount++;
-                lastRecvError = e.ErrorCode;
-                lastRecvErrorMsg = e.ToString();
                 return false;
             }
         }
@@ -112,19 +90,18 @@ namespace JaguarMover
         /// </summary>
         public void DataReceive()
         {
-            if (readerReply != null)
-                readerReply.Close();
+            readerReply?.Close();
             if (replyStream != null)
-                readerReply.Close();
+                readerReply?.Close();
 
-            replyStream = new NetworkStream(clientSocket);
+            replyStream = new NetworkStream(_clientSocket);
             readerReply = new StreamReader(replyStream);
 
 
             //receive data here
-
-            byte[] recs = new byte[4095];
-            int scount = 0;
+            //TODO renume commented if fine
+//            byte[] recs = new byte[4095];
+//            int scount = 0;
 
             while (true) //keep running
             {
@@ -138,10 +115,9 @@ namespace JaguarMover
                     {
                         recStr = readerReply.ReadLine();
 
-                        if(recStr.Length > 0)
+                        if (recStr?.Length > 0)
                         {
-                            _controller.Parse(recStr);
-
+                            controller.Parse(recStr);
                         }
                     }
                 }
@@ -153,19 +129,17 @@ namespace JaguarMover
         }
 
 
-
-        /// </summary>
+        /// <summary>Sends a command to Jaguar</summary>
         /// <param name="cmd"></param>
-        /// <returns></returns>
-        internal bool SendCommand(string Cmd)
+        /// <returns>success or fail</returns>
+        internal bool SendCommand(string cmd)
         {
-            /// <summary>
-            Cmd += "\r\n";
-            byte[] cmdData = ASCIIEncoding.UTF8.GetBytes(Cmd);
+            cmd += "\r\n";
+            byte[] cmdData = Encoding.UTF8.GetBytes(cmd);  //TODO if sending fails this was:  ASCIIEncoding.UTF8.GetBytes(Cmd);
             {
                 try
                 {
-                    if (clientSocket.Send(cmdData) != cmdData.Length)
+                    if (_clientSocket.Send(cmdData) != cmdData.Length)
                     {
                         return false;
                     }
@@ -194,13 +168,13 @@ namespace JaguarMover
             try
             {
                 readerReply?.Close(); // same as if !=null
-                writer?.Close();
             }
             catch
             {
+                // ignored
             }
 
-            clientSocket.Close();
+            _clientSocket.Close();
 
 
             if (receiveThread != null)
@@ -210,8 +184,6 @@ namespace JaguarMover
                     receiveThread.Abort(); //terminate the receive thread
                 }
             }
-
-
         }
     }
 }
