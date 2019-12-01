@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+//using System.Windows.Forms;
 
 namespace JaguarMover
 {
@@ -59,9 +60,14 @@ namespace JaguarMover
         {
             if (!connected)
             {
+                MotorData a = new MotorData();
+                TextBox.AppendText("\n");
+                TextBox.AppendText($"{a.erorMsg} {a.ch1Temp} EncS:{a.motEncS1} EncP:{a.motEncP1}");
                 return;
             }
             BateryLevel.Text = controller.MotorData[0].batVoltage.ToString(CultureInfo.InvariantCulture);
+            TextBox.AppendText($"/n"+controller.MotorData[0]);
+
         }
 
         private void StopBtn_Click(object sender, RoutedEventArgs e)

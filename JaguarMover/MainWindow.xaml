@@ -28,6 +28,7 @@
         <Label Content="Drive and Turn Speed" HorizontalAlignment="Left" Margin="371,49,0,0" VerticalAlignment="Top"/>
         <Label Name="DriveCurrSpeed" Content="1000" HorizontalAlignment="Left" Margin="509,51,0,0" VerticalAlignment="Top"/>
         <Label Name="TurnCurrSped" Content="1000" HorizontalAlignment="Left" Margin="550,51,0,0" VerticalAlignment="Top"/>
+        <TextBox Name="TextBox" HorizontalAlignment="Left" Margin="268,255,0,0"  TextWrapping="Wrap" VerticalAlignment="Top" Width="361" Height="115"/>
 
     </Grid>
 </Window>
