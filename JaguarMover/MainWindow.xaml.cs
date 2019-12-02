@@ -60,6 +60,8 @@ namespace JaguarMover
         {
             if (!connected)
             {
+
+
                 MotorData a = new MotorData();
                 TextBox.AppendText("\n");
                 TextBox.AppendText($"{a.erorMsg} {a.ch1Temp} EncS:{a.motEncS1} EncP:{a.motEncP1}");
