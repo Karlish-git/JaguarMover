@@ -12,12 +12,13 @@ namespace JaguarMover
     /// </summary>
     public partial class MainWindow
     {
-        private bool connected = false;
+        private bool connected;
         private bool eStop = true;
+        private bool light= true;
 
         private int driveSpeed, turnSpeed;
         private int forward, turn;
-        private int front=30, rear=30;
+        private int front=90, rear=30;
 
 
         private readonly JagController controller = new JagController();
@@ -35,7 +36,7 @@ namespace JaguarMover
                 return;
             }
 
-            controller.Disconnect();
+//            controller.Disconnect(); WTF
             controller.Move(forward, turn);
             DriveCurrSpeed.Content = forward.ToString();
             TurnCurrSped.Content = turn.ToString();
@@ -48,10 +49,12 @@ namespace JaguarMover
                 controller.Connect();
                 ConnectBtn.Content = "Disconnect";
                 connected = !connected;
+                BateryLevel.Text = controller.MotorData[0].batVoltage.ToString(CultureInfo.InvariantCulture);
             }
             else
             {
                 controller.Disconnect();
+                ConnectBtn.Content = "Connect";
                 connected = !connected;
             }
         }
@@ -59,30 +62,32 @@ namespace JaguarMover
         private void UpdateBtn_Click(object sender, RoutedEventArgs e)
         {
             if (!connected)
-            {
-
-
-                MotorData a = new MotorData();
-                TextBox.AppendText("\n");
-                TextBox.AppendText($"{a.erorMsg} {a.ch1Temp} EncS:{a.motEncS1} EncP:{a.motEncP1}");
+            { 
                 return;
             }
             BateryLevel.Text = controller.MotorData[0].batVoltage.ToString(CultureInfo.InvariantCulture);
-            TextBox.AppendText($"/n"+controller.MotorData[0]);
+            TextBox.AppendText("\n");
+            MotorData a = controller.MotorData[1];
+            TextBox.AppendText($"{a.reg5VVoltage}  {a.ch1Temp}   EncS:{a.motEncS1} EncP:{a.motEncP1}");
+            for (int i = 0; i < 4; i++)
+            {
+                controller.MotorData[i].erorMsg = "";
+            }
+
 
         }
 
-        private void StopBtn_Click(object sender, RoutedEventArgs e)
+        private void EStopBtn_Click(object sender, RoutedEventArgs e)
         {
             if (!connected)
             {
                 return;
             }
 
-            if (eStop)
+            if (!eStop)
             {
                 controller.Stop();
-                eStop = false;
+                eStop = true;
                 StopBtn.Content = "Enable E-stop";
                 StopBtn.Background = Brushes.Red;
             }
@@ -138,6 +143,11 @@ namespace JaguarMover
             }
         }
 
+        private void LightBtn_Click(object sender, RoutedEventArgs e)
+        {
+            controller.Light(!light);
+            light = !light;
+        }
 
         private void Window_Closed(object sender, EventArgs e)
         {
@@ -149,6 +159,7 @@ namespace JaguarMover
             {
                 // ignored
             }
+            Application.Current.Shutdown();
         }
 
 
@@ -174,6 +185,7 @@ namespace JaguarMover
                     break;
                 case Key.Space:
                     controller.Stop();
+                    eStop = true;
                     break;
                 case Key.Q:
                     controller.MoveFlippers(front,0);

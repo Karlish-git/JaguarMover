@@ -14,7 +14,7 @@
         <Button Name="UpdateBtn" Content="Update" HorizontalAlignment="Left" Margin="151,103,0,0"
                 VerticalAlignment="Top" Click="UpdateBtn_Click" />
         <Button Name="StopBtn" Content="Disable E-stop" HorizontalAlignment="Left" Margin="220,49,0,0"
-                VerticalAlignment="Top" Click="StopBtn_Click" Background="LawnGreen" FontWeight="Bold" Width="95" />
+                VerticalAlignment="Top" Click="EStopBtn_Click" Background="LawnGreen" FontWeight="Bold" Width="95" />
         <TextBox x:Name="DriverSliderValue" HorizontalAlignment="Left" Margin="244,158,0,0" Text="100" IsReadOnly="True"
                  TextWrapping="Wrap" VerticalAlignment="Top" Width="35" />
         <TextBox x:Name="TurnSliderValue" HorizontalAlignment="Left" Margin="244,181,0,0" Text="100" IsReadOnly="True"
@@ -29,6 +29,7 @@
         <Label Name="DriveCurrSpeed" Content="1000" HorizontalAlignment="Left" Margin="509,51,0,0" VerticalAlignment="Top"/>
         <Label Name="TurnCurrSped" Content="1000" HorizontalAlignment="Left" Margin="550,51,0,0" VerticalAlignment="Top"/>
         <TextBox Name="TextBox" HorizontalAlignment="Left" Margin="268,255,0,0"  TextWrapping="Wrap" VerticalAlignment="Top" Width="361" Height="115"/>
+        <Button x:Name="LightBtn" Content="Light" HorizontalAlignment="Left" Margin="279,123,0,0" VerticalAlignment="Top" Click="LightBtn_Click"/>
 
     </Grid>
 </Window>

@@ -30,7 +30,8 @@ namespace JaguarMover
 
         //TODO These sould be made usable to all 
         //        private const string COMM1_ID = "COMM1";
-        public MotorData[] MotorData = new MotorData[4];
+        public MotorData[] MotorData = {new MotorData(), new MotorData(), new MotorData(), new MotorData()};
+
         private readonly string[] MM_PACKAGE_ID = {"MM0", "MM1", "MM2", "MM3"};
 
         #endregion
@@ -116,7 +117,6 @@ namespace JaguarMover
         {
             comm.SendCommand("MM2 !PR 2 " + front.ToString());
             comm.SendCommand("MM2 !PR 1 " + (back).ToString());
-
         }
 
 
@@ -365,147 +365,154 @@ namespace JaguarMover
                             // ignored
                         }
                     }
-                    else if (msg.StartsWith("FF="))
-                    {
-                        //here is the motor driver board message
-                        try
-                        {
-                            msg = msg.Remove(0, 3);
-                            byte data = byte.Parse(msg);
-                            MotorData[i].statusFlag = data;
-                            if ((data & 0x1) != 0)
-                            {
-                                //checkBoxOverHeat.Checked = true;
-                                MotorData[i].erorMsg = "OH";
-                            }
-                            else
-                            {
-                                //checkBoxOverHeat.Checked = false;
-                            }
 
-                            if ((data & 0x2) != 0)
-                            {
-                                //checkBoxOverVol.Checked = true;
-                                MotorData[i].erorMsg += "+OV";
-                            }
-                            else
-                            {
-                                //checkBoxOverVol.Checked = false;
-                            }
+                    ///TODO should add
 
-                            if ((data & 0x4) != 0)
-                            {
-                                //checkBoxUnderVol.Checked = true;
-                                MotorData[i].erorMsg += "+UV";
-                            }
-                            else
-                            {
-                                //checkBoxUnderVol.Checked = false;
-                            }
+                    #region errorMSG  
 
-                            if ((data & 0x8) != 0)
-                            {
-                                //checkBoxShort.Checked = true;
-                                MotorData[i].erorMsg += "SHT";
-                            }
-                            else
-                            {
-                                //checkBoxShort.Checked = false;
-                            }
+//                    else if (msg.StartsWith("FF="))
+//                    {
+//                        //here is the motor driver board message
+//                        try
+//                        {
+//                            msg = msg.Remove(0, 3);
+//                            byte data = byte.Parse(msg);
+//                            MotorData[i].statusFlag = data;
+//                            if ((data & 0x1) != 0)
+//                            {
+//                                //checkBoxOverHeat.Checked = true;
+//                                MotorData[i].erorMsg = "OH";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxOverHeat.Checked = false;
+//                            }
+//
+//                            if ((data & 0x2) != 0)
+//                            {
+//                                //checkBoxOverVol.Checked = true;
+//                                MotorData[i].erorMsg += "+OV";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxOverVol.Checked = false;
+//                            }
+//
+//                            if ((data & 0x4) != 0)
+//                            {
+//                                //checkBoxUnderVol.Checked = true;
+//                                MotorData[i].erorMsg += "+UV";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxUnderVol.Checked = false;
+//                            }
+//
+//                            if ((data & 0x8) != 0)
+//                            {
+//                                //checkBoxShort.Checked = true;
+//                                MotorData[i].erorMsg += "SHT";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxShort.Checked = false;
+//                            }
+//
+//                            if ((data & 0x10) != 0) // TODO add Estop data
+//                            {
+//                                //checkBoxEStop.Checked = true;
+//                                // ReSharper disable once StringLiteralTypo
+//                                MotorData[i].erorMsg += "+ESTOP";
+//                                if ((i == 0) || (i == 1))
+//                                {
+//                                    // blnEStop = true;
+//                                }
+//                                else if (i == 2)
+//                                {
+//                                    //frontFlipEStop = true;
+//                                }
+//                                else if (i == 3)
+//                                {
+//                                    //rearFlipEStop = true;
+//                                }
+//                            }
+//                            else
+//                            {
+//                                //checkBoxEStop.Checked = false;
+//                                if ((i == 0) || (i == 1))
+//                                {
+//                                    //blnEStop = false;
+//                                }
+//                                else if (i == 2)
+//                                {
+//                                    //frontFlipEStop = false;
+//                                }
+//                                else if (i == 3)
+//                                {
+//                                    //rearFlipEStop = false;
+//                                }
+//                            }
+//
+//                            if ((data & 0x20) != 0)
+//                            {
+//                                //checkBoxSepexFault.Checked = true;
+//                                MotorData[i].erorMsg += "SEPF";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxSepexFault.Checked = false;
+//                            }
+//
+//                            if ((data & 0x40) != 0)
+//                            {
+//                                //checkBoxPromFault.Checked = true;
+//                                MotorData[i].erorMsg += "+PromF";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxPromFault.Checked = false;
+//                            }
+//
+//                            if ((data & 0x80) != 0)
+//                            {
+//                                //checkBoxConfigFault.Checked = true;
+//                                MotorData[i].erorMsg += "+ConfF";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxConfigFault.Checked = false;
+//                            }
+//
+//                            //                            if (motorData[i].erorMsg.Length > 1)
+//                            //                            {
+//                            //                                if (i == 0)
+//                            //                                    lblMD1State.Text = motorData[i].erorMsg;
+//                            //                                else if (i == 1)
+//                            //                                    lblMD2State.Text = motorData[i].erorMsg;
+//                            //                                else if (i == 2)
+//                            //                                    lblMD3State.Text = motorData[i].erorMsg;
+//                            //                                else if (i == 3)
+//                            //                                    lblMD4State.Text = motorData[i].erorMsg;
+//                            //                            }
+//                            //                            else
+//                            //                            {
+//                            //                                if (i == 0)
+//                            //                                    lblMD1State.Text = "OK";
+//                            //                                else if (i == 1)
+//                            //                                    lblMD2State.Text = "OK";
+//                            //                                else if (i == 2)
+//                            //                                    lblMD3State.Text = "OK";
+//                            //                                else if (i == 3)
+//                            //                                    lblMD4State.Text = "OK";
+//                            //                            }
+//                        }
+//                        catch
+//                        {
+//                            // ignored
+//                        }
+//                    }
 
-                            if ((data & 0x10) != 0) // TODO add Estop data
-                            {
-                                //checkBoxEStop.Checked = true;
-                                // ReSharper disable once StringLiteralTypo
-                                MotorData[i].erorMsg += "+ESTOP";
-                                if ((i == 0) || (i == 1))
-                                {
-                                    // blnEStop = true;
-                                }
-                                else if (i == 2)
-                                {
-                                    //frontFlipEStop = true;
-                                }
-                                else if (i == 3)
-                                {
-                                    //rearFlipEStop = true;
-                                }
-                            }
-                            else
-                            {
-                                //checkBoxEStop.Checked = false;
-                                if ((i == 0) || (i == 1))
-                                {
-                                    //blnEStop = false;
-                                }
-                                else if (i == 2)
-                                {
-                                    //frontFlipEStop = false;
-                                }
-                                else if (i == 3)
-                                {
-                                    //rearFlipEStop = false;
-                                }
-                            }
-
-                            if ((data & 0x20) != 0)
-                            {
-                                //checkBoxSepexFault.Checked = true;
-                                MotorData[i].erorMsg += "SEPF";
-                            }
-                            else
-                            {
-                                //checkBoxSepexFault.Checked = false;
-                            }
-
-                            if ((data & 0x40) != 0)
-                            {
-                                //checkBoxPromFault.Checked = true;
-                                MotorData[i].erorMsg += "+PromF";
-                            }
-                            else
-                            {
-                                //checkBoxPromFault.Checked = false;
-                            }
-
-                            if ((data & 0x80) != 0)
-                            {
-                                //checkBoxConfigFault.Checked = true;
-                                MotorData[i].erorMsg += "+ConfF";
-                            }
-                            else
-                            {
-                                //checkBoxConfigFault.Checked = false;
-                            }
-
-                            //                            if (motorData[i].erorMsg.Length > 1)
-                            //                            {
-                            //                                if (i == 0)
-                            //                                    lblMD1State.Text = motorData[i].erorMsg;
-                            //                                else if (i == 1)
-                            //                                    lblMD2State.Text = motorData[i].erorMsg;
-                            //                                else if (i == 2)
-                            //                                    lblMD3State.Text = motorData[i].erorMsg;
-                            //                                else if (i == 3)
-                            //                                    lblMD4State.Text = motorData[i].erorMsg;
-                            //                            }
-                            //                            else
-                            //                            {
-                            //                                if (i == 0)
-                            //                                    lblMD1State.Text = "OK";
-                            //                                else if (i == 1)
-                            //                                    lblMD2State.Text = "OK";
-                            //                                else if (i == 2)
-                            //                                    lblMD3State.Text = "OK";
-                            //                                else if (i == 3)
-                            //                                    lblMD4State.Text = "OK";
-                            //                            }
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-                    }
+                    #endregion
                 }
             }
         }
