@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
-//using System.Windows.Forms;
-
-namespace JaguarMover
+namespace JagControl
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -21,7 +18,7 @@ namespace JaguarMover
         private int frontSpeed, rearSpeed;
 
         private int forward, turn;
-        private int fFlipper = 30, rFlipper = 30;
+        private int fFlipper = 90, rFlipper = 30;
 
 
         private readonly JagController controller = new JagController();
@@ -39,7 +36,7 @@ namespace JaguarMover
                 return;
             }
 
-//            controller.Disconnect(); WTF
+            //            controller.Disconnect(); WTF
             controller.Move(forward, turn);
             DriveCurrSpeed.Content = forward.ToString();
             TurnCurrSped.Content = turn.ToString();
@@ -62,7 +59,7 @@ namespace JaguarMover
                 controller.Connect();
                 ConnectBtn.Content = "Disconnect";
                 connected = !connected;
-                BateryLevel.Text = controller.MotorData[0].batVoltage.ToString(CultureInfo.InvariantCulture);
+                BateryLevel.Text = controller.MotorData[0].batVoltage.ToString();
             }
             else
             {
@@ -79,7 +76,7 @@ namespace JaguarMover
                 return;
             }
 
-            BateryLevel.Text = controller.MotorData[0].batVoltage.ToString(CultureInfo.InvariantCulture);
+            BateryLevel.Text = controller.MotorData[0].batVoltage.ToString();
             TextBox.AppendText("\n");
             MotorData a = controller.MotorData[1];
             TextBox.AppendText($"{a.reg5VVoltage}  {a.ch1Temp}   EncS:{a.motEncS1} EncP:{a.motEncP1}");
@@ -176,7 +173,6 @@ namespace JaguarMover
             frontSpeed = value;
         }
 
-
         private void LightBtn_Click(object sender, RoutedEventArgs e)
         {
             controller.Light(!light);
@@ -197,6 +193,10 @@ namespace JaguarMover
             Application.Current.Shutdown();
         }
 
+        private void WrapPanel_Initialized(object sender, EventArgs e)
+        {
+
+        }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
@@ -205,9 +205,6 @@ namespace JaguarMover
             {
                 return;
             }
-
-            frontSpeed = 0;
-            rearSpeed = 0;
 
             switch (e.Key)
             {
@@ -251,7 +248,7 @@ namespace JaguarMover
 
             if (chMovement)
                 Move();
-            else if(chFlippers)
+            else if (chFlippers)
                 MoveFlipers();
         }
 
@@ -276,5 +273,67 @@ namespace JaguarMover
                     break;
             }
         }
+
+
+        #region Axis Camera Control
+        string CompleteURL(string theMediaURL, string theMediaType)
+        {
+            string anURL = theMediaURL;
+            if (!anURL.EndsWith("/"))
+            {
+                anURL += "/";
+            }
+
+            if (theMediaType == "mjpeg")
+            {
+                anURL += "axis-cgi/mjpg/video.cgi";
+            }
+            else if (theMediaType == "mpeg4")
+            {
+                anURL += "mpeg4/media.amp";
+            }
+            else if (theMediaType == "mpeg2-unicast")
+            {
+                anURL += "axis-cgi/mpeg2/video.cgi";
+            }
+            else if (theMediaType == "mpeg2-multicast")
+            {
+                anURL += "axis-cgi/mpeg2/video.cgi";
+            }
+
+            anURL = CompleteProtocol(anURL, theMediaType);
+            return anURL;
+        }
+
+        string CompleteProtocol(string theMediaURL, string theMediaType)
+        {
+            if (theMediaURL.IndexOf("://") >= 0)
+            {
+                return theMediaURL;
+            }
+
+            string anURL = theMediaURL;
+
+            if (theMediaType == "mjpeg")
+            {
+                anURL = "http://" + anURL;
+            }
+            else if (theMediaType == "mpeg4")
+            {
+                anURL = "axrtsphttp://" + anURL;
+            }
+            else if (theMediaType == "mpeg2-unicast")
+            {
+                anURL = "http://" + anURL;
+            }
+            else if (theMediaType == "mpeg2-multicast")
+            {
+                anURL = "axsdp" + anURL;
+            }
+
+            return anURL;
+        }
+
+        #endregion
     }
 }

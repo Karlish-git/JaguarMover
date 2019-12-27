@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Threading;
 
-namespace JaguarMover
+namespace JagControl
 {
     public class JagController
     {
@@ -29,7 +28,7 @@ namespace JaguarMover
         private readonly double[] tempTable =
             {-20, -15, -10, -5, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
 
-    
+        //TODO These sould be made usable to all 
         //        private const string COMM1_ID = "COMM1";
         public MotorData[] MotorData = {new MotorData(), new MotorData(), new MotorData(), new MotorData()};
 
@@ -83,10 +82,7 @@ namespace JaguarMover
         {
             comm.SendCommand("MMW !M 0 0");
             comm.SendCommand("MM2 !M 0 0");
-            comm.SendCommand("MM3 !M 0 0");
-            Thread.Sleep(5);
             comm.SendCommand("MMW !EX");
-            Thread.Sleep(5);
             comm.SendCommand("MM2 !EX");
         }
 
@@ -100,7 +96,7 @@ namespace JaguarMover
             int turnPwm;
             if (!ProtectMotorTemp)
             {
-                forwardPwm = -1 * forvard; 
+                forwardPwm = -1 * forvard; //TODO: mby change -1 to 0
                 turnPwm = -1 * turn;
             }
             else
@@ -117,14 +113,13 @@ namespace JaguarMover
         public void StartMove()
         {
             comm.SendCommand("MMW !MG");
-            Thread.Sleep(15);
             comm.SendCommand("MM2 !MG");
         }
 
         public void MoveFlippers(int front, int rear)
         {
-            comm.SendCommand("MM2 !PR 1 " + front.ToString());
-            comm.SendCommand("MM2 !PR 2 " + (rear).ToString());
+            comm.SendCommand("MM2 !G 2 " + front.ToString());
+            comm.SendCommand("MM2 !G 1 " + (rear).ToString());
         }
 
 
@@ -374,7 +369,7 @@ namespace JaguarMover
                         }
                     }
 
-                    //TODO should add error reading
+                    ///TODO should add
 
                     #region errorMSG  
 

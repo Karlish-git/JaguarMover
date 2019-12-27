@@ -4,6 +4,9 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseWPF>true</UseWPF>
+    <StartupObject>JaguarMover.App</StartupObject>
+    <ApplicationIcon />
+    <Win32Resource />
   </PropertyGroup>
 
 </Project>

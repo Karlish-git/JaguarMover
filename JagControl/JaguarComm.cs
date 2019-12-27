@@ -5,7 +5,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 
-namespace JaguarMover
+namespace JagControl
+
 {
     public class JaguarComm
     {
@@ -99,6 +100,9 @@ namespace JaguarMover
 
 
             //receive data here
+            //TODO renume commented if fine
+//            byte[] recs = new byte[4095];
+//            int scount = 0;
 
             while (true) //keep running
             {
@@ -132,7 +136,7 @@ namespace JaguarMover
         internal bool SendCommand(string cmd)
         {
             cmd += "\r\n";
-            byte[] cmdData = Encoding.UTF8.GetBytes(cmd);  //if sending fails this was:  ASCIIEncoding.UTF8.GetBytes(Cmd);
+            byte[] cmdData = Encoding.UTF8.GetBytes(cmd);  //TODO if sending fails this was:  ASCIIEncoding.UTF8.GetBytes(Cmd);
             {
                 try
                 {
