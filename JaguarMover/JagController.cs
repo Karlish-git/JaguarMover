@@ -68,7 +68,7 @@ namespace JaguarMover
             }
 
             comm = new JaguarComm(this);
-            comm.StartClient("192.168.0.60", 10001);
+            comm.StartClient("192.168.1.1", 80);
         }
 
         public void Disconnect()

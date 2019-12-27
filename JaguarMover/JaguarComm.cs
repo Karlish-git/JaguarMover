@@ -173,14 +173,14 @@ namespace JaguarMover
 
             _clientSocket.Close();
 
-
-//            if (receiveThread != null)
-//            {
-//                if (receiveThread.IsAlive)
-//                {
-//                    receiveThread.Abort(); //terminate the receive thread
-//                }
-//            }
+            //TODO find alternative
+            if (receiveThread != null)
+            {
+                if (receiveThread.IsAlive)
+                {
+                    receiveThread.Abort(); //terminate the receive thread
+                }
+            }
         }
     }
 }
