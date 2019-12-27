@@ -5,9 +5,36 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:JaguarMover"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <TextBox Name="Box"  HorizontalAlignment="Left" Margin="237,105,0,0" Text="TextBox" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
+        Title="Jaguar Mover" Height="450" Width="800" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" Closed="Window_Closed">
+    <Grid >
+        <TextBox Name="BateryLevel" HorizontalAlignment="Left" Margin="100,105,0,0" Text="0.0V" IsReadOnly="True"
+                 TextWrapping="Wrap" VerticalAlignment="Top" Width="30"/>
+        <Button Name="ConnectBtn" Content="Connect" HorizontalAlignment="Left" Margin="113,49,0,0"
+                VerticalAlignment="Top" Click="ConnectBtn_Click" />
+        <Button Name="UpdateBtn" Content="Update" HorizontalAlignment="Left" Margin="151,103,0,0"
+                VerticalAlignment="Top" Click="UpdateBtn_Click" />
+        <Button Name="StopBtn" Content="Disable E-stop" HorizontalAlignment="Left" Margin="220,49,0,0"
+                VerticalAlignment="Top" Click="EStopBtn_Click" Background="LawnGreen" FontWeight="Bold" Width="95" />
+        <TextBox x:Name="DriverSliderValue" HorizontalAlignment="Left" Margin="234,171,0,0" Text="100" IsReadOnly="True"
+                 TextWrapping="Wrap" VerticalAlignment="Top" Width="35" />
+        <TextBox x:Name="TurnSliderValue" HorizontalAlignment="Left" Margin="234,194,0,0" Text="100" IsReadOnly="True"
+            TextWrapping="Wrap" VerticalAlignment="Top" Width="34" />
+        <Slider x:Name="DriveSlider" HorizontalAlignment="Left" Margin="103,171,0,0" VerticalAlignment="Top" Width="120"
+                ValueChanged="DriveSlider_ValueChanged" Minimum="0" Maximum="1000"  MouseWheel="DriveSlider_MouseWheel" Value="100" />
+        <Slider x:Name="TurnSlider" HorizontalAlignment="Left" Margin="103,194,0,0" VerticalAlignment="Top" Width="120"
+                ValueChanged="TurnSlider_ValueChanged" Minimum="0" Maximum="1000" MouseWheel="TurnSlider_MouseWheel" Value="100" />
+        <Label Content="Drive Speed" HorizontalAlignment="Left" Margin="23,171,0,0" VerticalAlignment="Top" Height="18" Width="75" Padding="5,1,5,0"/>
+        <Label Content="Turn Speed" HorizontalAlignment="Left" Margin="23,194,0,0" VerticalAlignment="Top" Height="18" Width="73" Padding="5,1,5,0"/>
+        <Label Content="Drive and Turn Speed" HorizontalAlignment="Left" Margin="100,16,0,0" VerticalAlignment="Top"/>
+        <Label Name="DriveCurrSpeed" Content="1000" HorizontalAlignment="Left" Margin="238,18,0,0" VerticalAlignment="Top"/>
+        <Label Name="TurnCurrSped" Content="1000" HorizontalAlignment="Left" Margin="279,18,0,0" VerticalAlignment="Top"/>
+        <TextBox Name="TextBox" HorizontalAlignment="Left" Margin="23,287,0,0"  TextWrapping="Wrap" VerticalAlignment="Top" Width="361" Height="115"/>
+        <Button x:Name="LightBtn" Content="Light" HorizontalAlignment="Left" Margin="279,123,0,0" VerticalAlignment="Top" Click="LightBtn_Click"/>
+        <TextBox x:Name="FlipperSliderValue" HorizontalAlignment="Left" Margin="234,217,0,0" Text="100" IsReadOnly="True"
+            TextWrapping="Wrap" VerticalAlignment="Top" Width="34" />
+        <Slider x:Name="FlipperSlider" HorizontalAlignment="Left" Margin="103,217,0,0" VerticalAlignment="Top" Width="120"
+            ValueChanged="FlipperSlider_ValueChanged" Minimum="0" Maximum="1000" MouseWheel="FlipperSlider_MouseWheel" Value="100" />
+        <Label Content="Fliper Speed" HorizontalAlignment="Left" Margin="23,217,0,0" VerticalAlignment="Top" Height="18" Width="73" Padding="5,1,5,0"/>
 
     </Grid>
 </Window>

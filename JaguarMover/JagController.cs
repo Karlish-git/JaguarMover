@@ -1,35 +1,47 @@
 ﻿using System;
+using System.Threading;
 
 namespace JaguarMover
 {
     public class JagController
     {
-        private JaguarComm comm = null;
+        private JaguarComm comm;
+
         public bool ProtectMotorTemp;
+//        private MainWindow _mainWindow;
+
 
         #region ReciveVars
 
-        private bool blnEStop = false;
         private const string SensorPackageId = "#";
         private const string GpsPackageId = "$GPRMC";
+
         private const string MotorPackageId = "MM";
         //        private delegate void UpdateMainUiDelegate(string msg);
 
         //for temperature sensor
-        private readonly double[] resTable = new double[25]{114660,84510,62927,47077,35563,27119,20860,16204,12683,10000,
-            7942,6327,5074,4103,3336,2724,2237,1846,1530,1275,1068,899.3,760.7,645.2,549.4};
-        private readonly double[] tempTable = new double[25] { -20, -15, -10, -5, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
-        private const double Fullad = 4095;
+        private readonly double[] resTable =
+        {
+            114660, 84510, 62927, 47077, 35563, 27119, 20860, 16204, 12683, 10000,
+            7942, 6327, 5074, 4103, 3336, 2724, 2237, 1846, 1530, 1275, 1068, 899.3, 760.7, 645.2, 549.4
+        };
 
+        private readonly double[] tempTable =
+            {-20, -15, -10, -5, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
 
-        //TODO These sould be made usable to all 
+    
         //        private const string COMM1_ID = "COMM1";
-        private MotorData[] motorData = new MotorData[4];
-        private string[] MM_PACKAGE_ID = new String[4] { "MM0", "MM1", "MM2", "MM3" };
+        public MotorData[] MotorData = {new MotorData(), new MotorData(), new MotorData(), new MotorData()};
+
+        private readonly string[] MM_PACKAGE_ID = {"MM0", "MM1", "MM2", "MM3"};
 
         #endregion
 
 
+        /// <summary>
+        /// change the state of light
+        /// </summary>
+        /// <param name="state">the state to change to</param>
         public void Light(bool state)
         {
             //int powerIO = 0xff;   // 7th bit is for light
@@ -37,76 +49,86 @@ namespace JaguarMover
             int powerIO = 0xff;
             if (state)
             {
-                powerIO = powerIO & 0x7f;     //bit 7 turn off lights
-
+                powerIO &= 0x7f; //bit 7 turn off lights
             }
             else
             {
-                powerIO = powerIO | 0x80;     //bit 7 turn on lights
+                powerIO |= 0x80; //bit 7 turn on lights
             }
+
             string strCmd = "SYS MMC " + powerIO.ToString();
             comm.SendCommand(strCmd);
         }
 
-        public void Connect(bool connect)
+        public void Connect()
         {
-            if (connect)
-            {
-                if (comm==null)
-                {
-                    comm = new JaguarComm(this);
-                }
-                comm.StartClient("192.168.0.60", 10001);
-            }
-            else
+            if (comm != null)
             {
                 comm.Close();
             }
 
+            comm = new JaguarComm(this);
+            comm.StartClient("192.168.1.1", 80);
         }
 
+        public void Disconnect()
+        {
+            comm.Close();
+        }
+
+        /// <summary>
+        /// enable the e-breaks
+        /// </summary>
         public void Stop()
         {
             comm.SendCommand("MMW !M 0 0");
+            comm.SendCommand("MM2 !M 0 0");
+            comm.SendCommand("MM3 !M 0 0");
+            Thread.Sleep(5);
             comm.SendCommand("MMW !EX");
+            Thread.Sleep(5);
+            comm.SendCommand("MM2 !EX");
         }
 
         /// <summary>
         /// Input Values from -1000 to 1000.
         /// negative to go backward or left.
         /// </summary>
-        private void Move(int Forvard, int Turn)
+        public void Move(int forvard, int turn)
         {
-            int forwardPWM = 0;
-            int turnPWM = 0;
-            int cmd1 = 0, cmd2 = 0;
+            int forwardPwm;
+            int turnPwm;
             if (!ProtectMotorTemp)
             {
-                forwardPWM = -1 * Forvard;
-                turnPWM = -1 * Turn;
+                forwardPwm = -1 * forvard; 
+                turnPwm = -1 * turn;
             }
             else
             {
-                forwardPWM = 0;
-                turnPWM = 0;
+                forwardPwm = 0;
+                turnPwm = 0;
             }
-            cmd1 = forwardPWM + turnPWM;
-            cmd2 = forwardPWM - turnPWM;
-            sendMotorCmd(cmd1, cmd2); //, cmd1, cmd2);
 
+            int cmd1 = forwardPwm + turnPwm;
+            int cmd2 = forwardPwm - turnPwm;
+            SendMotorCmd(cmd1, cmd2); //, cmd1, cmd2);
         }
 
         public void StartMove()
         {
             comm.SendCommand("MMW !MG");
+            Thread.Sleep(15);
+            comm.SendCommand("MM2 !MG");
         }
 
-        public void MoveFlippers(int FrontLeft, int FrontRight, int BackLeft, int BackRight)
+        public void MoveFlippers(int front, int rear)
         {
-
+            comm.SendCommand("MM2 !PR 1 " + front.ToString());
+            comm.SendCommand("MM2 !PR 2 " + (rear).ToString());
         }
 
-        private void sendMotorCmd(int cmd1, int cmd2) //, int cmd3, int cmd4)
+
+        private void SendMotorCmd(int cmd1, int cmd2) //, int cmd3, int cmd4)
         {
             cmd1 = (cmd1 < -1000 ? -1000 : cmd1);
             cmd1 = (cmd1 > 1000 ? 1000 : cmd1);
@@ -123,48 +145,45 @@ namespace JaguarMover
             comm.SendCommand("MMW " + "!M " + cmd1.ToString() + " " + (-cmd2).ToString());
         }
 
-        public void SendCommand(string Comand)
+        public void SendCommand(string comand)
         {
-            comm.SendCommand(Comand);
+            comm.SendCommand(comand);
         }
 
 
         //===================== Receive Part =====================//
-        
+
         #region RecivedParser
 
-        public void Parse(string Msg)
+        public void Parse(string msg)
         {
-
             //process message here
 
             //            Msg = Msg.Remove(0, COMM1_ID.Length);
 
-            if (Msg.StartsWith("\n"))
-                Msg = Msg.Remove(0, 1);
+            if (msg.StartsWith("\n"))
+                msg = msg.Remove(0, 1);
 
-            if (Msg.StartsWith(SensorPackageId))
+            if (msg.StartsWith(SensorPackageId))
             {
                 // sensor package here, #seqNum,Yaw,_,GYRO,_,_,_,ACC,_,_,_,COMP,_,_,_,PRES,_,
                 //                processIMUMsg(Msg);
             }
-            else if (Msg.StartsWith(GpsPackageId))
+            else if (msg.StartsWith(GpsPackageId))
             {
                 //GPS sensor here
                 //                textBoxGPSRCV.Text = Msg;
                 //                ProcessGpsMsg(Msg);
             }
-            else if (Msg.StartsWith(MotorPackageId))
+            else if (msg.StartsWith(MotorPackageId))
             {
                 //motor driver board message here
-                ProcessMotorMsg(Msg);
+                ProcessMotorMsg(msg);
             }
             else
             {
                 //other system message here
-
             }
-
         }
 
         private void ProcessMotorMsg(string msg)
@@ -183,8 +202,8 @@ namespace JaguarMover
                         {
                             msg = msg.Remove(0, 2);
                             string[] strData = msg.Split(':');
-                            motorData[i].motAmp1 = double.Parse(strData[0]) / 10;
-                            motorData[i].motAmp2 = double.Parse(strData[1]) / 10;
+                            MotorData[i].motAmp1 = double.Parse(strData[0]) / 10;
+                            MotorData[i].motAmp2 = double.Parse(strData[1]) / 10;
                         }
                         catch
                         {
@@ -198,13 +217,13 @@ namespace JaguarMover
                         {
                             msg = msg.Remove(0, 3);
                             string[] strData = msg.Split(':');
-                            motorData[i].ai3 = double.Parse(strData[2]);
-                            motorData[i].ai4 = double.Parse(strData[3]);
+                            MotorData[i].ai3 = double.Parse(strData[2]);
+                            MotorData[i].ai4 = double.Parse(strData[3]);
                             //use 10K resistor to GND, translate to temperature
-                            double res = Trans2Temperature(motorData[i].ai3);
-                            motorData[i].motTemp1 = res;
-                            res = Trans2Temperature(motorData[i].ai4);
-                            motorData[i].motTemp2 = res;
+                            double res = Trans2Temperature(MotorData[i].ai3);
+                            MotorData[i].motTemp1 = res;
+                            res = Trans2Temperature(MotorData[i].ai4);
+                            MotorData[i].motTemp2 = res;
                         }
                         catch
                         {
@@ -218,8 +237,8 @@ namespace JaguarMover
                         {
                             msg = msg.Remove(0, 2);
                             string[] strData = msg.Split(':');
-                            motorData[i].motEncP1 = int.Parse(strData[0]);
-                            motorData[i].motEncP2 = int.Parse(strData[1]);
+                            MotorData[i].motEncP1 = int.Parse(strData[0]);
+                            MotorData[i].motEncP2 = int.Parse(strData[1]);
 
                             //                            if (i == 2)
                             //                            {
@@ -240,7 +259,8 @@ namespace JaguarMover
                     }
 
                     #region driverDigitalIO_mbyDeleate
-                    else if (msg.StartsWith("D="))  // TODO see what are they used for. mby remove
+
+                    else if (msg.StartsWith("D=")) // TODO see what are they used for. mby remove
                     {
                         //here is the digital input message
                         try
@@ -248,8 +268,8 @@ namespace JaguarMover
                             msg = msg.Remove(0, 2);
                             byte data = byte.Parse(msg);
                             //                            int test = data & 0x4;    TODO remove if no need
-                            motorData[i].di3 = (data & 0x4) != 0 ? 1 : 0;
-                            motorData[i].di4 = (data & 0x8) != 0 ? 1 : 0;
+                            MotorData[i].di3 = (data & 0x4) != 0 ? 1 : 0;
+                            MotorData[i].di4 = (data & 0x8) != 0 ? 1 : 0;
                         }
                         catch
                         {
@@ -263,25 +283,25 @@ namespace JaguarMover
                         {
                             msg = msg.Remove(0, 3);
                             byte data = byte.Parse(msg);
-                            motorData[i].do1 = (data & 0x1) != 0 ? 1 : 0;
-                            motorData[i].do2 = (data & 0x2) != 0 ? 1 : 0;
+                            MotorData[i].do1 = (data & 0x1) != 0 ? 1 : 0;
+                            MotorData[i].do2 = (data & 0x2) != 0 ? 1 : 0;
                         }
                         catch
                         {
                             // ignored
                         }
                     }
+
                     #endregion
 
-                    else if (msg.StartsWith("P="))  //Read Motor Power Output Applied
+                    else if (msg.StartsWith("P=")) //Read Motor Power Output Applied
                     {
-
                         try
                         {
                             msg = msg.Remove(0, 2);
                             string[] strData = msg.Split(':');
-                            motorData[i].motPower1 = int.Parse(strData[0]);
-                            motorData[i].motPower2 = int.Parse(strData[1]);
+                            MotorData[i].motPower1 = int.Parse(strData[0]);
+                            MotorData[i].motPower2 = int.Parse(strData[1]);
                         }
                         catch
                         {
@@ -295,8 +315,8 @@ namespace JaguarMover
                         {
                             msg = msg.Remove(0, 2);
                             string[] strData = msg.Split(':');
-                            motorData[i].motEncS1 = int.Parse(strData[0]);
-                            motorData[i].motEncS2 = int.Parse(strData[1]);
+                            MotorData[i].motEncS1 = int.Parse(strData[0]);
+                            MotorData[i].motEncS2 = int.Parse(strData[1]);
                         }
                         catch
                         {
@@ -310,9 +330,8 @@ namespace JaguarMover
                         {
                             msg = msg.Remove(0, 2);
                             string[] strData = msg.Split(':');
-                            motorData[i].ch1Temp = double.Parse(strData[0]);
-                            motorData[i].ch2Temp = double.Parse(strData[1]);
-
+                            MotorData[i].ch1Temp = double.Parse(strData[0]);
+                            MotorData[i].ch2Temp = double.Parse(strData[1]);
                         }
                         catch
                         {
@@ -326,9 +345,9 @@ namespace JaguarMover
                         {
                             msg = msg.Remove(0, 2);
                             string[] strData = msg.Split(':');
-                            motorData[i].drvVoltage = double.Parse(strData[0]) / 10;
-                            motorData[i].batVoltage = double.Parse(strData[1]) / 10;
-                            motorData[i].reg5VVoltage = double.Parse(strData[2]) / 1000;
+                            MotorData[i].drvVoltage = double.Parse(strData[0]) / 10;
+                            MotorData[i].batVoltage = double.Parse(strData[1]) / 10;
+                            MotorData[i].reg5VVoltage = double.Parse(strData[2]) / 1000;
                         }
                         catch
                         {
@@ -346,150 +365,162 @@ namespace JaguarMover
                         {
                             msg = msg.Remove(0, 3);
                             string[] strData = msg.Split(':');
-                            motorData[i].motEncCR1 = int.Parse(strData[0]);
-                            motorData[i].motEncCR2 = int.Parse(strData[1]);
-
+                            MotorData[i].motEncCR1 = int.Parse(strData[0]);
+                            MotorData[i].motEncCR2 = int.Parse(strData[1]);
                         }
                         catch
                         {
                             // ignored
                         }
                     }
-                    else if (msg.StartsWith("FF="))
-                    {
-                        //here is the motor driver board message
-                        try
-                        {
-                            msg = msg.Remove(0, 3);
-                            byte data = byte.Parse(msg);
-                            motorData[i].statusFlag = data;
-                            if ((data & 0x1) != 0)
-                            {
-                                //checkBoxOverHeat.Checked = true;
-                                motorData[i].erorMsg = "OH";
-                            }
-                            else
-                            {
-                                //checkBoxOverHeat.Checked = false;
-                            }
-                            if ((data & 0x2) != 0)
-                            {
-                                //checkBoxOverVol.Checked = true;
-                                motorData[i].erorMsg += "+OV";
-                            }
-                            else
-                            {
-                                //checkBoxOverVol.Checked = false;
-                            }
-                            if ((data & 0x4) != 0)
-                            {
-                                //checkBoxUnderVol.Checked = true;
-                                motorData[i].erorMsg += "+UV";
-                            }
-                            else
-                            {
-                                //checkBoxUnderVol.Checked = false;
-                            }
-                            if ((data & 0x8) != 0)
-                            {
-                                //checkBoxShort.Checked = true;
-                                motorData[i].erorMsg += "SHT";
 
-                            }
-                            else
-                            {
-                                //checkBoxShort.Checked = false;
-                            }
-                            if ((data & 0x10) != 0)  // TODO add Estop data
-                            {
-                                //checkBoxEStop.Checked = true;
-                                // ReSharper disable once StringLiteralTypo
-                                motorData[i].erorMsg += "+ESTOP";
-                                if ((i == 0) || (i == 1))
-                                {
-                                    blnEStop = true;
-                                }
-                                else if (i == 2)
-                                {
-                                    //                                    frontFlipEStop = true;
-                                }
-                                else if (i == 3)
-                                {
-                                    //                                    rearFlipEStop = true;
-                                }
-                            }
-                            else
-                            {
-                                //checkBoxEStop.Checked = false;
-                                if ((i == 0) || (i == 1))
-                                {
-                                    blnEStop = false;
-                                }
-                                else if (i == 2)
-                                {
-                                    //                                    frontFlipEStop = false;
-                                }
-                                else if (i == 3)
-                                {
-                                    //                                    rearFlipEStop = false;
-                                }
-                            }
-                            if ((data & 0x20) != 0)
-                            {
-                                //checkBoxSepexFault.Checked = true;
-                                motorData[i].erorMsg += "SEPF";
-                            }
-                            else
-                            {
-                                //checkBoxSepexFault.Checked = false;
-                            }
-                            if ((data & 0x40) != 0)
-                            {
-                                //checkBoxPromFault.Checked = true;
-                                motorData[i].erorMsg += "+PromF";
-                            }
-                            else
-                            {
-                                //checkBoxPromFault.Checked = false;
-                            }
-                            if ((data & 0x80) != 0)
-                            {
-                                //checkBoxConfigFault.Checked = true;
-                                motorData[i].erorMsg += "+ConfF";
-                            }
-                            else
-                            {
-                                //checkBoxConfigFault.Checked = false;
-                            }
+                    //TODO should add error reading
 
-                            //                            if (motorData[i].erorMsg.Length > 1)
-                            //                            {
-                            //                                if (i == 0)
-                            //                                    lblMD1State.Text = motorData[i].erorMsg;
-                            //                                else if (i == 1)
-                            //                                    lblMD2State.Text = motorData[i].erorMsg;
-                            //                                else if (i == 2)
-                            //                                    lblMD3State.Text = motorData[i].erorMsg;
-                            //                                else if (i == 3)
-                            //                                    lblMD4State.Text = motorData[i].erorMsg;
-                            //                            }
-                            //                            else
-                            //                            {
-                            //                                if (i == 0)
-                            //                                    lblMD1State.Text = "OK";
-                            //                                else if (i == 1)
-                            //                                    lblMD2State.Text = "OK";
-                            //                                else if (i == 2)
-                            //                                    lblMD3State.Text = "OK";
-                            //                                else if (i == 3)
-                            //                                    lblMD4State.Text = "OK";
-                            //                            }
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-                    }
+                    #region errorMSG  
+
+//                    else if (msg.StartsWith("FF="))
+//                    {
+//                        //here is the motor driver board message
+//                        try
+//                        {
+//                            msg = msg.Remove(0, 3);
+//                            byte data = byte.Parse(msg);
+//                            MotorData[i].statusFlag = data;
+//                            if ((data & 0x1) != 0)
+//                            {
+//                                //checkBoxOverHeat.Checked = true;
+//                                MotorData[i].erorMsg = "OH";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxOverHeat.Checked = false;
+//                            }
+//
+//                            if ((data & 0x2) != 0)
+//                            {
+//                                //checkBoxOverVol.Checked = true;
+//                                MotorData[i].erorMsg += "+OV";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxOverVol.Checked = false;
+//                            }
+//
+//                            if ((data & 0x4) != 0)
+//                            {
+//                                //checkBoxUnderVol.Checked = true;
+//                                MotorData[i].erorMsg += "+UV";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxUnderVol.Checked = false;
+//                            }
+//
+//                            if ((data & 0x8) != 0)
+//                            {
+//                                //checkBoxShort.Checked = true;
+//                                MotorData[i].erorMsg += "SHT";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxShort.Checked = false;
+//                            }
+//
+//                            if ((data & 0x10) != 0) // TODO add Estop data
+//                            {
+//                                //checkBoxEStop.Checked = true;
+//                                // ReSharper disable once StringLiteralTypo
+//                                MotorData[i].erorMsg += "+ESTOP";
+//                                if ((i == 0) || (i == 1))
+//                                {
+//                                    // blnEStop = true;
+//                                }
+//                                else if (i == 2)
+//                                {
+//                                    //frontFlipEStop = true;
+//                                }
+//                                else if (i == 3)
+//                                {
+//                                    //rearFlipEStop = true;
+//                                }
+//                            }
+//                            else
+//                            {
+//                                //checkBoxEStop.Checked = false;
+//                                if ((i == 0) || (i == 1))
+//                                {
+//                                    //blnEStop = false;
+//                                }
+//                                else if (i == 2)
+//                                {
+//                                    //frontFlipEStop = false;
+//                                }
+//                                else if (i == 3)
+//                                {
+//                                    //rearFlipEStop = false;
+//                                }
+//                            }
+//
+//                            if ((data & 0x20) != 0)
+//                            {
+//                                //checkBoxSepexFault.Checked = true;
+//                                MotorData[i].erorMsg += "SEPF";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxSepexFault.Checked = false;
+//                            }
+//
+//                            if ((data & 0x40) != 0)
+//                            {
+//                                //checkBoxPromFault.Checked = true;
+//                                MotorData[i].erorMsg += "+PromF";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxPromFault.Checked = false;
+//                            }
+//
+//                            if ((data & 0x80) != 0)
+//                            {
+//                                //checkBoxConfigFault.Checked = true;
+//                                MotorData[i].erorMsg += "+ConfF";
+//                            }
+//                            else
+//                            {
+//                                //checkBoxConfigFault.Checked = false;
+//                            }
+//
+//                            //                            if (motorData[i].erorMsg.Length > 1)
+//                            //                            {
+//                            //                                if (i == 0)
+//                            //                                    lblMD1State.Text = motorData[i].erorMsg;
+//                            //                                else if (i == 1)
+//                            //                                    lblMD2State.Text = motorData[i].erorMsg;
+//                            //                                else if (i == 2)
+//                            //                                    lblMD3State.Text = motorData[i].erorMsg;
+//                            //                                else if (i == 3)
+//                            //                                    lblMD4State.Text = motorData[i].erorMsg;
+//                            //                            }
+//                            //                            else
+//                            //                            {
+//                            //                                if (i == 0)
+//                            //                                    lblMD1State.Text = "OK";
+//                            //                                else if (i == 1)
+//                            //                                    lblMD2State.Text = "OK";
+//                            //                                else if (i == 2)
+//                            //                                    lblMD3State.Text = "OK";
+//                            //                                else if (i == 3)
+//                            //                                    lblMD4State.Text = "OK";
+//                            //                            }
+//                        }
+//                        catch
+//                        {
+//                            // ignored
+//                        }
+//                    }
+
+                    #endregion
                 }
             }
         }
@@ -497,12 +528,12 @@ namespace JaguarMover
         private double Trans2Temperature(double adValue)
         {
             //for new temperature sensor
-            double tempM = 0;
-            double k = (adValue / 4095);  // was Fullad
-            double resValue = 0;
-            if (k != 0)
+            double tempM;
+            double k = (adValue / 4095); // was Fullad
+            double resValue;
+            if (Math.Abs(k) > 1)
             {
-                resValue = 10000 * (1 - k) / k;      //AD value to resistor
+                resValue = 10000 * (1 - k) / k; //AD value to resistor
             }
             else
             {
@@ -510,7 +541,7 @@ namespace JaguarMover
             }
 
             int index = -1;
-            if (resValue >= resTable[0])       //too lower
+            if (resValue >= resTable[0]) //too lower
             {
                 tempM = -20;
             }
@@ -528,15 +559,16 @@ namespace JaguarMover
                         break;
                     }
                 }
+
                 if (index >= 0)
                 {
-                    tempM = tempTable[index] + (resValue - resTable[index]) / (resTable[index + 1] - resTable[index]) * (tempTable[index + 1] - tempTable[index]);
+                    tempM = tempTable[index] + (resValue - resTable[index]) / (resTable[index + 1] - resTable[index]) *
+                            (tempTable[index + 1] - tempTable[index]);
                 }
                 else
                 {
                     tempM = 0;
                 }
-
             }
 
             return tempM;
@@ -544,7 +576,9 @@ namespace JaguarMover
 
 
         //TODO add GPS and IMU data
+
         #region IMU&GPS__Data  
+
         //        private void processIMUMsg(string msg)
         //        {
         //            msg = msg.Remove(0, 1);
@@ -720,10 +754,9 @@ namespace JaguarMover
         //                //preLongtitude = curLongitude;
         //            }
         //        }
-        #endregion
-
 
         #endregion
 
+        #endregion
     }
 }
